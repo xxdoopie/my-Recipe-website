@@ -1,0 +1,74 @@
+@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap');
+
+/* Hide scrollbar */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@theme{
+  --breakpoint-*: initial;
+	--breakpoint-sm: 480px;
+	--breakpoint-md: 768px;
+	--breakpoint-lg: 976px;
+	--breakpoint-xl: 1306px;
+  --color-mainTheme: #F6B100;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+
+@layer base{ 
+	h1 {
+	@apply text-4xl font-bold tracking-tight text-slate-900 
+	}
+  h2 {
+    @apply text-3xl font-bold tracking-tight text-slate-900
+    }
+    h3 {
+      @apply text-2xl font-bold tracking-tight text-slate-900
+      }
+}
+
+@layer components{
+.card{
+	@apply m-10 rounded-lg bg-white px-6 py-8
+}
+
+} 
+
+/* HTML: <div class="loader"></div> */
+.loader {
+  width: fit-content;
+  font-size: 40px;
+  font-family: system-ui,sans-serif;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #0000;
+  -webkit-text-stroke: 1px #000;
+  background:
+    radial-gradient(0.71em at 50% 1em,#000 99%,#0000 101%) calc(50% - 1em) 1em/2em 200% repeat-x text,
+    radial-gradient(0.71em at 50% -0.5em,#0000 99%,#000 101%) 50% 1.5em/2em 200% repeat-x text;
+  animation: 
+    l10-0 .8s linear infinite alternate,
+    l10-1  2s linear infinite;
+}
+.loader:before {
+  content: "Loading";
+}
+@keyframes l10-0 {
+  to {background-position-x: 50%,calc(50% + 1em)}
+}
+@keyframes l10-1 {
+  to {background-position-y: -.5em,0}
+}
