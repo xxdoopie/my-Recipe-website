@@ -1,29 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AuthModal from './AuthModule.jsx';
+import { useAuth } from '../context/AuthContext';
+import { FaUserCircle } from 'react-icons/fa';
+
 function Navigation({sendUpdatedPage, sendQueryFromNav}) {
   const [searchTrue, setSearchTrue] = useState(false);
   const [activePage, setActivePage] = useState("home");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModal, setAuthModal] = useState({ open: false, type: 'login' });
   const [searchQuery, setSearchQuery] = useState('');
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
-  const handleKeyDown = (event) =>{
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setShowUserMenu(false);
+      handleNavigation('home');
+    } catch (error) {
+      console.error('Failed to logout:', error);
+    }
+  };
+
+  const handleKeyDown = (event) => {
     if(event.key === 'Enter'){
       handleSearch();
     }
-  }
-  const handleSearch = () =>{
-    sendQueryFromNav(`${searchQuery}`)
-    sendUpdatedPage("recipes")
-  }
+  };
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      sendQueryFromNav(searchQuery.trim());
+      sendUpdatedPage("recipes");
+      setSearchTrue(false); // Close search on desktop after search
+    }
+  };
+
+  const handleNavigation = (page) => {
+    setActivePage(page);
+    sendUpdatedPage(page);
+    if (page === "recipes") {
+      sendQueryFromNav(''); // Clear search query when navigating to recipes
+    }
+  };
+
   const mobileLinks = [
     { name: "Home", key: "home" },
     { name: "Recipes", key: "recipes" },
     { name: "Favourites", key: "favourites" },
-    { name: "Profile", key: "profile" },
-    { name: "Login", key: "login" },
-    { name: "Sign Up", key: "signup" },
+    ...(user
+      ? [
+          { name: "Profile", key: "profile" },
+          { name: "Logout", key: "logout" }
+        ]
+      : [
+          { name: "Login", key: "login" },
+          { name: "Sign Up", key: "signup" }
+        ]
+    ),
   ];
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showUserMenu && !event.target.closest('.user-menu')) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showUserMenu]);
   
   return (
     <div className='z-50 sticky top-0'>
@@ -37,21 +85,13 @@ function Navigation({sendUpdatedPage, sendQueryFromNav}) {
         <div className={`${searchTrue ? 'hidden' : 'flex'} gap-10`}>
           <h2
             className={`cursor-pointer ${activePage === "home" ? 'text-white' : 'text-black'}`}
-            onClick={() => {
-              setActivePage("home");
-              sendUpdatedPage("home")
-            }}
-    
+            onClick={() => handleNavigation("home")}
           >
             Home
           </h2>
           <h2
             className={`cursor-pointer ${activePage === "recipes" ? 'text-white' : 'text-black'}`}
-            onClick={() => {
-              setActivePage("recipes")
-              sendUpdatedPage("recipes")
-            }
-            }
+            onClick={() => handleNavigation("recipes")}
           >
             Recipes
           </h2>
@@ -62,16 +102,15 @@ function Navigation({sendUpdatedPage, sendQueryFromNav}) {
           className={`transition-all duration-500 ease-in-out overflow-hidden ${
             searchTrue ? 'max-w-lg opacity-100 scale-100' : 'max-w-0 opacity-0 scale-0'
           } relative w-full`}
-          onChange={(e => {
-            setSearchQuery(e.target.value);
-          })}
-          onKeyDown={handleKeyDown}
         >
           <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <img src="/assets/MagnifyingGlassGray.png" alt="Search" className="w-5 h-5" />
           </span>
           <input
             type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Search..."
             className="pl-10 pr-4 py-2 w-full bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-mainTheme"
           />
@@ -81,20 +120,73 @@ function Navigation({sendUpdatedPage, sendQueryFromNav}) {
           <img
             src="/assets/MagnifyingGlass.png"
             alt="Search"
-            className="w-6 h-6"
+            className="w-6 h-6 cursor-pointer"
             onClick={() => setSearchTrue(!searchTrue)}
           />
-          <img src="/assets/heart.png" alt="Favorites" className="w-6 h-6" 
-          onClick={() => {
-            sendUpdatedPage("favourites")
-          }}
+          <img 
+            src="/assets/heart.png" 
+            alt="Favorites" 
+            className="w-6 h-6 cursor-pointer" 
+            onClick={() => handleNavigation("favourites")}
           />
-         <img
-            src="/assets/User.png"
-            alt="User"
-            className="w-6 h-6 cursor-pointer"
-            onClick={() => setAuthModal({ open: true, type: 'login' })}
-          />
+          <div className="relative user-menu">
+            {user ? (
+              <div 
+                className="flex items-center gap-2 cursor-pointer"
+                onClick={() => setShowUserMenu(!showUserMenu)}
+              >
+                {user.photoURL ? (
+                  <img 
+                    src={user.photoURL} 
+                    alt="Profile" 
+                    className="w-8 h-8 rounded-full"
+                  />
+                ) : (
+                  <FaUserCircle className="w-6 h-6 text-white" />
+                )}
+                <span className="text-white text-sm hidden md:block">
+                  {user.displayName || user.email}
+                </span>
+              </div>
+            ) : (
+              <img
+                src="/assets/User.png"
+                alt="User"
+                className="w-6 h-6 cursor-pointer"
+                onClick={() => setAuthModal({ open: true, type: 'login' })}
+              />
+            )}
+
+            {/* User Dropdown Menu */}
+            {showUserMenu && user && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                <button
+                  onClick={() => {
+                    handleNavigation("profile");
+                    setShowUserMenu(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Profile
+                </button>
+                <button
+                  onClick={() => {
+                    handleNavigation("favourites");
+                    setShowUserMenu(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Favorites
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -111,36 +203,25 @@ function Navigation({sendUpdatedPage, sendQueryFromNav}) {
             Recipe <span className="text-black">finder</span>
           </h1>
         </div>
-        <div
-          className={`transition-all duration-500 ease-in-out overflow-hidden max-w-sm opacity-100 '
-          } relative w-[40%]`}
-          onChange={(e => {
-            setSearchQuery(e.target.value);
-          })}
-          onKeyDown={handleKeyDown}
-        >
+        <div className="relative w-[40%]">
           <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <img src="/assets/MagnifyingGlassGray.png" alt="Search" className="w-5 h-5" />
           </span>
           <input
             type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Search..."
             className="pl-10 pr-4 py-2 w-full bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-mainTheme"
-            onChange={(e => {
-              setSearchQuery(e.target.value);
-            })}
-            onKeyDown={handleKeyDown}
           />
         </div>
         <img
           src="/assets/heart.png"
           alt="Favorites"
-          className="w-6 h-6"
-          onClick={() => {
-            sendUpdatedPage("favourites")
-          }}
+          className="w-6 h-6 cursor-pointer"
+          onClick={() => handleNavigation("favourites")}
         />
-        
       </div>
 
       {/* Full Screen Mobile Menu */}
@@ -158,15 +239,35 @@ function Navigation({sendUpdatedPage, sendQueryFromNav}) {
             </button>
           </div>
 
+          {user && (
+            <div className="flex items-center gap-3 mb-4">
+              {user.photoURL ? (
+                <img 
+                  src={user.photoURL} 
+                  alt="Profile" 
+                  className="w-10 h-10 rounded-full"
+                />
+              ) : (
+                <FaUserCircle className="w-10 h-10 text-gray-600" />
+              )}
+              <div>
+                <p className="font-semibold">{user.displayName || 'User'}</p>
+                <p className="text-sm text-gray-600">{user.email}</p>
+              </div>
+            </div>
+          )}
+
           {mobileLinks.map(link => (
             <button
               key={link.key}
               onClick={() => {
-                if(link.key === 'login' || link.key === 'signup' || link.key === 'profile') {
+                if (link.key === 'logout') {
+                  handleLogout();
+                } else if (link.key === 'login' || link.key === 'signup') {
                   setAuthModal({ open: true, type: link.key });
+                } else {
+                  handleNavigation(link.key);
                 }
-                setActivePage(link.key);
-                sendUpdatedPage(link.key);
                 setMobileMenuOpen(false);
               }}
               className={`text-lg font-semibold ${
@@ -177,21 +278,21 @@ function Navigation({sendUpdatedPage, sendQueryFromNav}) {
             </button>
           ))}
 
-          {/* Optional: add divider or extra options */}
           <div className="mt-auto w-full text-center text-sm text-gray-500">
             © 2025 RecipeFinder. All rights reserved.
           </div>
         </div>
       )}
+
       <AuthModal
-          isOpen={authModal.open}
-          isRegister={authModal.type === 'signup'}
-          onClose={(next = null) =>
-            next
-              ? setAuthModal({ open: true, type: next })
-              : setAuthModal({ open: false, type: 'login' })
-          }
-        />
+        isOpen={authModal.open}
+        isRegister={authModal.type === 'signup'}
+        onClose={(next = null) =>
+          next
+            ? setAuthModal({ open: true, type: next })
+            : setAuthModal({ open: false, type: 'login' })
+        }
+      />
     </div>
   );
 }
