@@ -203,9 +203,13 @@ function Navigation({sendUpdatedPage, sendQueryFromNav}) {
             className="w-6 h-6 cursor-pointer"
             onClick={() => setMobileMenuOpen(true)}
           />
-          <h1 className="font-bold text-white text-lg">
-            Recipe <span className="text-black">finder</span>
-          </h1>
+          <h1 className="font-bold text-white flex items-center gap-2"
+        onClick={() => handleNavigation("home")}>
+        
+          Chop<span className="text-black">Drop</span>
+        
+
+        </h1>
         </div>
         <div className="relative w-[40%]">
           <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
