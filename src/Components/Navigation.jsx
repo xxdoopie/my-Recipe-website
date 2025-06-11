@@ -77,8 +77,12 @@ function Navigation({sendUpdatedPage, sendQueryFromNav}) {
     <div className='z-50 sticky top-0'>
       {/* Desktop Nav */}
       <div className="headerNav hidden sm:flex justify-between items-center px-4 md:px-6 py-4 w-full bg-mainTheme">
-        <h1 className="font-bold text-white">
-          Recipe <span className="text-black">finder</span>
+        <h1 className="font-bold text-white flex items-center gap-2 cursor-pointer"
+        onClick={() => handleNavigation("home")}>
+        
+          Chop <span className="text-black">Drop</span>
+           <img src="assets/logo logo new.png" width={50} alt="" />
+
         </h1>
 
         {/* Page Navigation */}
