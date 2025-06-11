@@ -203,7 +203,7 @@ function Navigation({sendUpdatedPage, sendQueryFromNav}) {
             className="w-6 h-6 cursor-pointer"
             onClick={() => setMobileMenuOpen(true)}
           />
-          <h1 className="font-bold text-white flex items-center gap-2"
+          <h1 className="font-bold text-xl text-white flex items-center gap-2"
         onClick={() => handleNavigation("home")}>
         
           Chop<span className="text-black">Drop</span>
